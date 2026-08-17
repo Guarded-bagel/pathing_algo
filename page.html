@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+            #map
+            {
+                border-style: solid;
+                border-width: 5px;
+            }
+        </style>
+        <script>
+            async function drawPath() {
+                drawMap()
+
+                const response = await fetch('http://127.0.0.1:5001/api/getPath');
+                let data = await response.json();
+                let canvas = document.getElementById("map");
+                let ctx = canvas.getContext('2d');
+
+                ctx.save()
+                ctx.scale(50, 50)
+                ctx.beginPath();
+                ctx.strokeStyle = 'blue';
+
+                for(let i = 0; i < data.length; i++) {
+                    ctx.moveTo(data[i][0], data[i][1] + .5); //.5 added to handle canvas things.
+                    ctx.lineTo(data[i][0] + 1, data[i][1] + .5);
+                }
+
+                ctx.stroke()
+                ctx.restore()
+
+            }
+
+            async function createPath() {
+                let canvas = document.getElementById('map')
+                let xPosStart = document.getElementById('xPosStart').value
+                let yPosStart = document.getElementById('yPosStart').value
+                let xPosEnd = document.getElementById('xPosEnd').value
+                let yPosEnd = document.getElementById('yPosEnd').value
+
+                const response = await fetch('http://127.0.0.1:5001/api/makePath', {
+                    method: "POST",
+                    body: JSON.stringify({
+                        xStart: xPosStart,
+                        yStart: yPosStart,
+                        xEnd: xPosEnd,
+                        yEnd: yPosEnd,
+                    })
+                })
+
+                let ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, 500, 500)
+                drawPath()
+            }
+
+            async function drawMap() {
+                const response = await fetch('http://127.0.0.1:5001/api/instruct');
+                let data = await response.json();
+
+                let canvas = document.getElementById("map");
+                let ctx = canvas.getContext('2d');
+
+                ctx.save()
+                ctx.scale(50, 50)
+                ctx.beginPath();
+
+                for(let i = 0; i < data.length - 1; i += 2) {
+                    ctx.moveTo(data[i][0], data[i][1] + .5); //.5 added to handle canvas things.
+                    ctx.lineTo(data[i+1][0], data[i+1][1] + .5);
+                }
+
+                ctx.stroke()
+                ctx.restore()
+            }
+
+            async function postPillar() {
+                let canvas = document.getElementById('map')
+                let xPos = document.getElementById('xPos').value
+                let yPos = document.getElementById('yPos').value
+                let size = document.getElementById('size').value
+
+                const response = await fetch('http://127.0.0.1:5001/api/postPillar', {
+                    method: "POST",
+                    body: JSON.stringify({
+                        x: xPos,
+                        y: yPos,
+                        length: size
+                    })
+                })
+
+                let ctx = canvas.getContext('2d');
+
+                ctx.clearRect(0, 0, 500, 500)
+                drawMap()
+            }
+
+            async function clearCanvas() {
+                const response = await fetch('http://127.0.0.1:5001/api/clear', {
+                    method: "POST"
+                })
+                
+                let canvas = document.getElementById('map')
+                let ctx = canvas.getContext('2d')
+                ctx.clearRect(0, 0, 500, 500)
+                drawMap()
+            }
+        </script>
+    </head>
+    <body>
+        <canvas id="map" width="500" height="500"></canvas>
+        <script>drawMap()</script>
+        <form>
+            <label for="xPos">X position</label>
+            <input type="text" id="xPos">
+            <label for="yPos">Y position</label>
+            <input type="text" id="yPos">
+            <label for="size">Size of Pillar (px)</label>
+            <input type="text" id="size">
+            <button type="button" onclick="postPillar()">Input into area</button>
+            <br>
+            <label for="xPosStart">Start X</label>
+            <input type="text" id="xPosStart">
+            <label for="yPosStart">Start Y</label>
+            <input type="text" id="yPosStart">
+            <label for="xPosEnd">End X</label>
+            <input type="text" id="xPosEnd">
+            <label for="yPosEnd">End Y</label>
+            <input type="text" id="yPosEnd">
+            <button type="button" onclick="createPath()">Create Path</button>
+            <br>
+            <button type="button" onclick="clearCanvas()">Clear canvas</button>
+        </form>
+    </body>
+</html>
